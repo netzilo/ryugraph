@@ -7,11 +7,11 @@ package ryugraph
 
 /*
 #cgo darwin  CFLAGS:  -I${SRCDIR}
-#cgo darwin  LDFLAGS: -L${SRCDIR} -lryu
+#cgo darwin  LDFLAGS: -L${SRCDIR} -lryu_static -lc++
 #cgo linux   CFLAGS:  -I${SRCDIR}
-#cgo linux   LDFLAGS: -L${SRCDIR} -lryu -Wl,-rpath,$ORIGIN
+#cgo linux   LDFLAGS: -L${SRCDIR} -lryu_static -lstdc++ -lpthread -ldl -lm
 #cgo windows CFLAGS:  -I${SRCDIR}
-#cgo windows LDFLAGS: -L${SRCDIR} -lryu_shared
+#cgo windows LDFLAGS: -L${SRCDIR} -lryu_static -lstdc++ -lws2_32
 
 // Declare only the opaque struct types CGo needs — avoids the self-referencing
 // typedef aliases in ryu.h that confuse the CGo type parser.
