@@ -1,3 +1,5 @@
+//go:build cgo
+
 // Package ryugraph provides a CGo wrapper around the RyuGraph embedded graph
 // database (libryu). The wrapper exposes only the primitives needed for the
 // sessiondata behavior graph: open/close a DB, execute Cypher, iterate results.
