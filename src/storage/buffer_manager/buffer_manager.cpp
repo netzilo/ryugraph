@@ -151,7 +151,7 @@ uint8_t* BufferManager::pin(FileHandle& fileHandle, page_idx_t pageIdx,
     }
 }
 
-#if defined(WIN32)
+#if defined(WIN32) && defined(_MSC_VER)
 class AccessViolation : public std::exception {
 public:
     AccessViolation(const uint8_t* location) : location{location} {}
@@ -193,11 +193,11 @@ inline bool try_func(const std::function<void(uint8_t*)>& func, uint8_t* frame,
     pageState->addReader();
 #endif
 
-#if defined(_WIN32) && !BM_MALLOC
+#if defined(_WIN32) && defined(_MSC_VER) && !BM_MALLOC
     try {
 #endif
         func(frame);
-#if defined(_WIN32) && !BM_MALLOC
+#if defined(_WIN32) && defined(_MSC_VER) && !BM_MALLOC
     } catch (AccessViolation& exc) {
         // If we encounter an acess violation within the VM region,
         // the page was decomitted by another thread
@@ -218,7 +218,7 @@ inline bool try_func(const std::function<void(uint8_t*)>& func, uint8_t* frame,
 void BufferManager::optimisticRead(FileHandle& fileHandle, page_idx_t pageIdx,
     const std::function<void(uint8_t*)>& func) {
     auto pageState = fileHandle.getPageState(pageIdx);
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(_MSC_VER)
     // Change the Structured Exception handling just for the scope of this function
     auto translator = ScopedTranslator(handleAccessViolation);
 #endif

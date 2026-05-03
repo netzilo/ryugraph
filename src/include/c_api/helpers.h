@@ -2,6 +2,7 @@
 
 #include <string>
 #ifdef _WIN32
+#include <cstdint>
 #include <time.h>
 
 #include <windows.h>

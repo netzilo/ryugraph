@@ -91,7 +91,9 @@ void Checkpointer::writeCheckpoint() {
     catalog::Catalog::Get(clientContext)->resetVersion();
     auto* dataFH = storageManager->getDataFH();
     dataFH->getPageManager()->resetVersion();
-    storageManager->getWAL().reset();
+    if (!clientContext.getDBConfig()->noWal) {
+        storageManager->getWAL().reset();
+    }
     storageManager->getShadowFile().reset();
 }
 
@@ -149,18 +151,24 @@ void Checkpointer::logCheckpointAndApplyShadowPages() {
     auto& shadowFile = storageManager->getShadowFile();
     // Flush the shadow file.
     shadowFile.flushAll(clientContext);
-    auto wal = WAL::Get(clientContext);
-    // Log the checkpoint to the WAL and flush WAL. This indicates that all shadow pages and
-    // files (snapshots of catalog and metadata) have been written to disk. The part that is not
-    // done is to replace them with the original pages or catalog and metadata files. If the
-    // system crashes before this point, the WAL can still be used to recover the system to a
-    // state where the checkpoint can be redone.
-    wal->logAndFlushCheckpoint(&clientContext);
-    shadowFile.applyShadowPages(clientContext);
-    // Clear the wal and also shadowing files.
-    auto bufferManager = MemoryManager::Get(clientContext)->getBufferManager();
-    wal->clear();
-    shadowFile.clear(*bufferManager);
+    if (!clientContext.getDBConfig()->noWal) {
+        auto wal = WAL::Get(clientContext);
+        // Log the checkpoint to the WAL and flush WAL. This indicates that all shadow pages and
+        // files (snapshots of catalog and metadata) have been written to disk. The part that is not
+        // done is to replace them with the original pages or catalog and metadata files. If the
+        // system crashes before this point, the WAL can still be used to recover the system to a
+        // state where the checkpoint can be redone.
+        wal->logAndFlushCheckpoint(&clientContext);
+        shadowFile.applyShadowPages(clientContext);
+        // Clear the wal and also shadowing files.
+        auto bufferManager = MemoryManager::Get(clientContext)->getBufferManager();
+        wal->clear();
+        shadowFile.clear(*bufferManager);
+    } else {
+        shadowFile.applyShadowPages(clientContext);
+        auto bufferManager = MemoryManager::Get(clientContext)->getBufferManager();
+        shadowFile.clear(*bufferManager);
+    }
 }
 
 void Checkpointer::rollback() {
@@ -179,6 +187,10 @@ bool Checkpointer::canAutoCheckpoint(const main::ClientContext& clientContext,
         return false;
     }
     if (!clientContext.getDBConfig()->autoCheckpoint) {
+        return false;
+    }
+    if (clientContext.getDBConfig()->noWal) {
+        // WAL is disabled — no WAL size to measure, auto-checkpoint is meaningless.
         return false;
     }
     if (transaction.isRecovery()) {

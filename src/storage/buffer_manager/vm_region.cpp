@@ -65,6 +65,17 @@ void VMRegion::releaseFrame(frame_idx_t frameIdx) const {
             code, systemErrMessage(code)));
     }
 
+#elif defined(__APPLE__)
+    // On macOS, MADV_DONTNEED is a no-op and does not release physical pages. Remapping
+    // the frame with MAP_FIXED over the same address replaces the existing mapping with a
+    // fresh anonymous mapping, guaranteeing the OS reclaims the physical pages immediately.
+    void* result = mmap(getFrame(frameIdx), frameSize, PROT_READ | PROT_WRITE,
+        MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+    if (result == MAP_FAILED) {
+        throw BufferManagerException(stringFormat(
+            "Releasing physical memory associated with a frame failed with error code {}: {}.",
+            errno, posixErrMessage()));
+    }
 #else
     int error = madvise(getFrame(frameIdx), frameSize, MADV_DONTNEED);
     if (error != 0) {

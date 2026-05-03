@@ -34,7 +34,7 @@ namespace main {
 
 SystemConfig::SystemConfig(uint64_t bufferPoolSize_, uint64_t maxNumThreads, bool enableCompression,
     bool readOnly, uint64_t maxDBSize, bool autoCheckpoint, uint64_t checkpointThreshold,
-    bool forceCheckpointOnClose, bool throwOnWalReplayFailure, bool enableChecksums
+    bool forceCheckpointOnClose, bool throwOnWalReplayFailure, bool enableChecksums, bool noWal
 #if defined(__APPLE__)
     ,
     uint32_t threadQos
@@ -43,7 +43,8 @@ SystemConfig::SystemConfig(uint64_t bufferPoolSize_, uint64_t maxNumThreads, boo
     : maxNumThreads{maxNumThreads}, enableCompression{enableCompression}, readOnly{readOnly},
       autoCheckpoint{autoCheckpoint}, checkpointThreshold{checkpointThreshold},
       forceCheckpointOnClose{forceCheckpointOnClose},
-      throwOnWalReplayFailure(throwOnWalReplayFailure), enableChecksums(enableChecksums) {
+      throwOnWalReplayFailure(throwOnWalReplayFailure), enableChecksums(enableChecksums),
+      noWal(noWal) {
 #if defined(__APPLE__)
     this->threadQos = threadQos;
 #endif

@@ -10,7 +10,8 @@ ryu_state ryu_database_init(const char* database_path, ryu_system_config config,
         std::string database_path_str = database_path;
         auto systemConfig = SystemConfig(config.buffer_pool_size, config.max_num_threads,
             config.enable_compression, config.read_only, config.max_db_size, config.auto_checkpoint,
-            config.checkpoint_threshold);
+            config.checkpoint_threshold, true /* forceCheckpointOnClose */,
+            true /* throwOnWalReplayFailure */, true /* enableChecksums */, config.no_wal);
 
 #if defined(__APPLE__)
         systemConfig.threadQos = config.thread_qos;
@@ -42,6 +43,7 @@ ryu_system_config ryu_default_system_config() {
     cSystemConfig.max_db_size = config.maxDBSize;
     cSystemConfig.auto_checkpoint = config.autoCheckpoint;
     cSystemConfig.checkpoint_threshold = config.checkpointThreshold;
+    cSystemConfig.no_wal = false;
 #if defined(__APPLE__)
     cSystemConfig.thread_qos = config.threadQos;
 #endif

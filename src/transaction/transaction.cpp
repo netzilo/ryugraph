@@ -53,7 +53,8 @@ Transaction::Transaction(TransactionType transactionType, common::transaction_t 
 }
 
 bool Transaction::shouldLogToWAL() const {
-    return isWriteTransaction() && !clientContext->isInMemory();
+    return isWriteTransaction() && !clientContext->isInMemory() &&
+           !clientContext->getDBConfig()->noWal;
 }
 
 bool Transaction::shouldForceCheckpoint() const {

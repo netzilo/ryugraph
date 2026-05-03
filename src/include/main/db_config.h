@@ -66,6 +66,7 @@ struct DBConfig {
     bool throwOnWalReplayFailure;
     bool enableChecksums;
     bool enableSpillingToDisk;
+    bool noWal;
 #if defined(__APPLE__)
     uint32_t threadQos;
 #endif

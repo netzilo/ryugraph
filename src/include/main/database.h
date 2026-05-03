@@ -67,7 +67,7 @@ struct RYU_API SystemConfig {
         bool enableCompression = true, bool readOnly = false, uint64_t maxDBSize = -1u,
         bool autoCheckpoint = true, uint64_t checkpointThreshold = 16777216 /* 16MB */,
         bool forceCheckpointOnClose = true, bool throwOnWalReplayFailure = true,
-        bool enableChecksums = true
+        bool enableChecksums = true, bool noWal = false
 #if defined(__APPLE__)
         ,
         uint32_t threadQos = QOS_CLASS_DEFAULT
@@ -84,6 +84,9 @@ struct RYU_API SystemConfig {
     bool forceCheckpointOnClose;
     bool throwOnWalReplayFailure;
     bool enableChecksums;
+    // When true, WAL logging is skipped entirely. Safe for ephemeral databases where
+    // crash recovery is not needed. Reduces per-transaction memory and I/O overhead.
+    bool noWal;
 #if defined(__APPLE__)
     uint32_t threadQos;
 #endif

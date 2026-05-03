@@ -50,6 +50,8 @@ unset(RYU_INCLUDES)
 if(WIN32)
         # Anything linking against the static library must not use dllimport.
         target_compile_definitions(ryu INTERFACE RYU_STATIC_DEFINE)
+        # Winsock2 is required by the httplib-based extension installer.
+        target_link_libraries(ryu_shared PUBLIC ws2_32)
 endif()
 
 if(NOT WIN32)
