@@ -66,13 +66,14 @@ void VMRegion::releaseFrame(frame_idx_t frameIdx) const {
     }
 
 #elif defined(__APPLE__)
-    // Best-effort: MADV_FREE_REUSABLE hints the OS to reclaim physical pages.
-    // On Apple Silicon the hardware page granularity is 16 KB; if RYU_PAGE_SIZE
-    // is smaller the call returns EINVAL — that is safe to ignore because the
-    // buffer manager still reuses the virtual frame and the OS can reclaim
-    // physical pages under memory pressure via its own VM system.
-    // Never throw here — a failed release is not fatal.
-    (void)madvise(getFrame(frameIdx), frameSize, MADV_FREE_REUSABLE);
+    // MADV_FREE_REUSABLE marks pages as reclaimable by the OS under pressure.
+    // Requires RYU_PAGE_SIZE == hardware page size (16 KB on Apple Silicon).
+    // Build with -DRYU_PAGE_SIZE_LOG2=14 on macOS to guarantee alignment.
+    if (madvise(getFrame(frameIdx), frameSize, MADV_FREE_REUSABLE) != 0) {
+        throw BufferManagerException(stringFormat(
+            "Releasing physical memory associated with a frame failed with error code {}: {}.",
+            errno, posixErrMessage()));
+    }
 #else
     int error = madvise(getFrame(frameIdx), frameSize, MADV_DONTNEED);
     if (error != 0) {
