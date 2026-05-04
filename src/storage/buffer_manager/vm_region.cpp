@@ -66,16 +66,13 @@ void VMRegion::releaseFrame(frame_idx_t frameIdx) const {
     }
 
 #elif defined(__APPLE__)
-    // On macOS, MADV_DONTNEED is a no-op and does not release physical pages. Remapping
-    // the frame with MAP_FIXED over the same address replaces the existing mapping with a
-    // fresh anonymous mapping, guaranteeing the OS reclaims the physical pages immediately.
-    void* result = mmap(getFrame(frameIdx), frameSize, PROT_READ | PROT_WRITE,
-        MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (result == MAP_FAILED) {
-        throw BufferManagerException(stringFormat(
-            "Releasing physical memory associated with a frame failed with error code {}: {}.",
-            errno, posixErrMessage()));
-    }
+    // Best-effort: MADV_FREE_REUSABLE hints the OS to reclaim physical pages.
+    // On Apple Silicon the hardware page granularity is 16 KB; if RYU_PAGE_SIZE
+    // is smaller the call returns EINVAL — that is safe to ignore because the
+    // buffer manager still reuses the virtual frame and the OS can reclaim
+    // physical pages under memory pressure via its own VM system.
+    // Never throw here — a failed release is not fatal.
+    (void)madvise(getFrame(frameIdx), frameSize, MADV_FREE_REUSABLE);
 #else
     int error = madvise(getFrame(frameIdx), frameSize, MADV_DONTNEED);
     if (error != 0) {
